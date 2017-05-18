@@ -1,0 +1,5 @@
+- name: reread-config
+  shell: supervisorctl reread
+
+- name: restart-app
+  supervisorctl: name=testapp state=restarted

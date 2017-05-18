@@ -1,0 +1,25 @@
+- name: "Installing database packages"
+  apt: pkg={{ item }} state=installed
+  with_items:
+  - mysql-server
+  - python-mysqldb
+
+- name: "Adding database backup cronjob"
+  cron: hour=10 minute=22 user=root job="/usr/bin/mysqldump --all-databases > /root/dbbackup.dump" name="MySQL Backup"
+
+- name: "Adding database"
+  mysql_db: name=ansibletutorial state=present
+  notify:
+  - import-db
+
+- name: "Copying database dump"
+  copy: src=../files/dbdump.sql dest=/var/tmp/dbdump.sql owner=root group=root mode=0600
+
+- name: "Granting access"
+  mysql_user: name=ansibletutorial host=% priv=ansibletutorial.*:ALL password={{ lookup('password', 'credentials/dbpassword.txt') }}
+
+- name: "Allowing remote access"
+  copy: src=../files/n-mysqld-bind.cnf dest=/etc/mysql/mysql.conf.d/n-mysqld-bind.cnf owner=root group=root mode=0644
+  notify:
+  - restart-mysql
+
